@@ -85,7 +85,7 @@ func (iter *Iterator) ReadVal(obj interface{}) {
 
 // WriteVal copy the go interface into underlying JSON, same as json.Marshal
 func (stream *Stream) WriteVal(val interface{}) {
-	if nil == val {
+	if val == nil {
 		stream.WriteNil()
 		return
 	}
