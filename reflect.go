@@ -1,6 +1,7 @@
 package jsoniter
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"unsafe"
@@ -83,8 +84,46 @@ func (iter *Iterator) ReadVal(obj interface{}) {
 	}
 }
 
+func hasCycle(v interface{}) bool {
+	visited := make(map[uintptr]bool)
+	queue := []reflect.Value{reflect.ValueOf(v)}
+
+	for len(queue) > 0 {
+		val := queue[0]
+		queue = queue[1:]
+
+		for val.Kind() == reflect.Ptr || val.Kind() == reflect.Interface {
+			if val.IsNil() {
+				break
+			}
+			if val.Kind() == reflect.Ptr {
+				ptr := val.Pointer()
+				if visited[ptr] {
+					return true
+				}
+				visited[ptr] = true
+			}
+			val = val.Elem()
+		}
+
+		if val.Kind() == reflect.Struct {
+			for i := 0; i < val.NumField(); i++ {
+				queue = append(queue, val.Field(i))
+			}
+		}
+	}
+	return false
+}
+
+var errCycleEncountered = errors.New("jsoniter: unsupported type: encountered a cycle")
+
 // WriteVal copy the go interface into underlying JSON, same as json.Marshal
 func (stream *Stream) WriteVal(val interface{}) {
+	if hasCycle(val) {
+		stream.Error = errCycleEncountered
+		return
+	}
+
 	if val == nil {
 		stream.WriteNil()
 		return

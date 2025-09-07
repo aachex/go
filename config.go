@@ -2,7 +2,6 @@ package jsoniter
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"reflect"
 	"sync"
@@ -304,43 +303,8 @@ func (cfg *frozenConfig) Marshal(v interface{}) ([]byte, error) {
 	return copied, nil
 }
 
-func hasCycle(v interface{}) bool {
-	visited := make(map[uintptr]bool)
-	queue := []reflect.Value{reflect.ValueOf(v)}
-
-	for len(queue) > 0 {
-		val := queue[0]
-		queue = queue[1:]
-
-		for val.Kind() == reflect.Ptr || val.Kind() == reflect.Interface {
-			if val.IsNil() {
-				break
-			}
-			if val.Kind() == reflect.Ptr {
-				ptr := val.Pointer()
-				if visited[ptr] {
-					return true
-				}
-				visited[ptr] = true
-			}
-			val = val.Elem()
-		}
-
-		if val.Kind() == reflect.Struct {
-			for i := 0; i < val.NumField(); i++ {
-				queue = append(queue, val.Field(i))
-			}
-		}
-	}
-	return false
-}
-
 // marshalToStream writes v to a borrowed stream and returns stream.Buffer() with error.
 func (cfg *frozenConfig) marshalToStream(v interface{}) ([]byte, error) {
-	if hasCycle(v) {
-		return nil, fmt.Errorf("jsoniter: unsupported type: encountered a cycle")
-	}
-
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
 
