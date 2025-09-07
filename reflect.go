@@ -119,15 +119,16 @@ var ErrCycleEncountered = errors.New("jsoniter: unsupported type: encountered a 
 
 // WriteVal copy the go interface into underlying JSON, same as json.Marshal
 func (stream *Stream) WriteVal(val interface{}) {
+	if val == nil {
+		stream.WriteNil()
+		return
+	}
+
 	if hasCycle(val) {
 		stream.Error = ErrCycleEncountered
 		return
 	}
 
-	if val == nil {
-		stream.WriteNil()
-		return
-	}
 	cacheKey := reflect2.RTypeOf(val)
 	encoder := stream.cfg.getEncoderFromCache(cacheKey)
 	if encoder == nil {
