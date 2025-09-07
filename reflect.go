@@ -115,12 +115,12 @@ func hasCycle(v interface{}) bool {
 	return false
 }
 
-var errCycleEncountered = errors.New("jsoniter: unsupported type: encountered a cycle")
+var ErrCycleEncountered = errors.New("jsoniter: unsupported type: encountered a cycle")
 
 // WriteVal copy the go interface into underlying JSON, same as json.Marshal
 func (stream *Stream) WriteVal(val interface{}) {
 	if hasCycle(val) {
-		stream.Error = errCycleEncountered
+		stream.Error = ErrCycleEncountered
 		return
 	}
 
